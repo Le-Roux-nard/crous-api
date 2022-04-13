@@ -1,0 +1,526 @@
+{
+	"swagger": "2.0",
+	"info": {
+		"version": "1.0",
+		"title": "API Documentation",
+		"license": {
+			"name": "MIT",
+			"url": "https://opensource.org/licenses/MIT"
+		}
+	},
+	"basePath": "/",
+	"tags": [
+		{
+			"name": "CROUS API"
+		}
+	],
+	"produces": ["application/json"],
+	"paths": {
+		"/crous/{idCrous}": {
+			"parameters": [
+				{
+					"name": "idCrous",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du CROUS",
+					"type": "string"
+				}
+			],
+			"produces": ["application/json"],
+			"get": {
+				"tags": ["CROUS API"],
+				"summary": "Récupère les informations d'un CROUS",
+				"responses": {
+					"200": {
+						"description": "ok",
+						"schema": {
+							"$ref": "#/definitions/Crous"
+						}
+					},
+					"404": {
+						"description": "not found"
+					}
+				}
+			}
+		},
+		"/crous/{idCrous}/restaurants": {
+			"parameters": [
+				{
+					"name": "idCrous",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du CROUS",
+					"type": "string"
+				}
+			],
+			"produces": ["application/json"],
+			"get": {
+				"tags": ["CROUS API"],
+				"summary": "Récupère les restaurants d'un CROUS",
+				"responses": {
+					"200": {
+						"description": "ok",
+						"schema": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/Restaurant"
+							}
+						}
+					},
+					"404": {
+						"description": "not found"
+					}
+				}
+			}
+		},
+		"/crous/{idCrous}/restaurants/{restaurantId}": {
+			"parameters": [
+				{
+					"name": "idCrous",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du CROUS",
+					"type": "string"
+				},
+				{
+					"name": "restaurantId",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du restaurant",
+					"type": "string"
+				}
+			],
+			"produces": ["application/json"],
+			"get": {
+				"tags": ["CROUS API"],
+				"summary": "Récupère les informations d'un restaurant",
+				"responses": {
+					"200": {
+						"description": "ok",
+						"schema": {
+							"$ref": "#/definitions/Restaurant"
+						}
+					},
+					"404": {
+						"description": "not found"
+					}
+				}
+			}
+		},
+		"/crous/{idCrous}/actualites": {
+			"parameters": [
+				{
+					"name": "idCrous",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du CROUS",
+					"type": "string"
+				}
+			],
+			"produces": ["application/json"],
+			"get": {
+				"tags": ["CROUS API"],
+				"summary": "Récupère les actualités d'un CROUS",
+				"responses": {
+					"200": {
+						"description": "ok",
+						"schema": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/Actualites"
+							}
+						}
+					},
+					"404": {
+						"description": "not found"
+					}
+				}
+			}
+		},
+		"/crous/{idCrous}/actualites/{articleId}": {
+			"parameters": [
+				{
+					"name": "idCrous",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du CROUS",
+					"type": "string"
+				},
+				{
+					"name": "articleId",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant de l'article",
+					"type": "string"
+				}
+			],
+			"produces": ["application/json"],
+			"get": {
+				"tags": ["CROUS API"],
+				"summary": "Récupère les informations d'un article d'actualité",
+				"responses": {
+					"200": {
+						"description": "ok",
+						"schema": {
+							"$ref": "#/definitions/Actualites"
+						}
+					},
+					"404": {
+						"description": "not found"
+					}
+				}
+			}
+		},
+		"/crous/{idCrous}/residences": {
+			"parameters": [
+				{
+					"name": "idCrous",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du CROUS",
+					"type": "string"
+				}
+			],
+			"produces": ["application/json"],
+			"get": {
+				"tags": ["CROUS API"],
+				"summary": "Récupère les résidences d'un CROUS",
+				"responses": {
+					"200": {
+						"description": "ok",
+						"schema": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/Residence"
+							}
+						}
+					},
+					"404": {
+						"description": "not found"
+					}
+				}
+			}
+		},
+		"/crous/{idCrous}/residences/{residenceId}": {
+			"parameters": [
+				{
+					"name": "idCrous",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du CROUS",
+					"type": "string"
+				},
+				{
+					"name": "residenceId",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant de la résidence",
+					"type": "string"
+				}
+			],
+			"produces": ["application/json"],
+			"get": {
+				"tags": ["CROUS API"],
+				"summary": "Récupère les informations d'une résidence",
+				"responses": {
+					"200": {
+						"description": "ok",
+						"schema": {
+							"$ref": "#/definitions/Residence"
+						}
+					},
+					"404": {
+						"description": "not found"
+					}
+				}
+			}
+		},
+		"/crous/{idCrous}/menus/": {
+			"parameters": [
+				{
+					"name": "idCrous",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du CROUS",
+					"type": "string"
+				}
+			],
+			"produces": ["application/json"],
+			"get": {
+				"tags": ["CROUS API"],
+				"summary": "Récupère les menus d'un crous",
+				"responses": {
+					"200": {
+						"description": "ok",
+						"schema": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/Menu"
+							}
+						}
+					},
+					"404": {
+						"description": "not found"
+					}
+				}
+			}
+		},
+		"/crous/{idCrous}/menus/${restaurantId}": {
+			"parameters": [
+				{
+					"name": "idCrous",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant du CROUS",
+					"type": "string"
+				},
+				{
+					"name": "restaurantId",
+					"in": "path",
+					"required": true,
+					"description": "Identifiant d'un restaurant",
+					"type": "string"
+				}
+			],
+			"produces": ["application/json"],
+			"get": {
+				"tags": ["CROUS API"],
+				"summary": "Récupère les menus d'un restaurant",
+				"responses": {
+					"200": {
+						"description": "ok",
+						"schema": {
+							"$ref": "#/definitions/Menu"
+						}
+					},
+					"404": {
+						"description": "not found"
+					}
+				}
+			}
+		}
+	},
+	"definitions": {
+		"Crous": {
+			"properties": {
+				"nomCrous": {
+					"type": "string",
+					"uniqueItems": true
+				},
+				"donnesDisponibles": {
+					"type": "object",
+					"properties": {
+						"actualites": {
+							"type": "boolean"
+						},
+						"residences": {
+							"type": "boolean"
+						},
+						"restaurants": {
+							"type": "boolean"
+						}
+					}
+				},
+				"donnees": {
+					"type": "object",
+					"properties": {
+						"actualites": {
+							"type": "array",
+							"nullable": true,
+							"items": {
+								"$ref": "#/definitions/Actualite"
+							}
+						},
+						"residences": {
+							"type": "array",
+							"nullable": true,
+							"items": {
+								"$ref": "#/definitions/Residence"
+							}
+						},
+						"restaurants": {
+							"type": "array",
+							"nullable": true,
+							"items": {
+								"$ref": "#/definitions/Restaurant"
+							}
+						}
+					}
+				}
+			}
+		},
+		"Restaurant": {
+			"properties": {
+				"nom": {
+					"type": "string"
+				},
+				"short_desc": {
+					"type": "string"
+				},
+				"opening": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"matin": {
+								"type": "boolean"
+							},
+							"midi": {
+								"type": "boolean"
+							},
+							"soir": {
+								"type": "boolean"
+							}
+						}
+					}
+				},
+				"position": {
+					"$ref": "#/definitions/position"
+				},
+				"type": {
+					"type": "string"
+				},
+				"id": {
+					"type": "string",
+					"uniqueItems": true
+				},
+				"contact": {
+					"type": "string"
+				},
+				"horaires": {
+					"type": "string"
+				},
+				"moyen_acces": {
+					"type": "string"
+				},
+				"pratique": {
+					"type": "string"
+				},
+				"paiements": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"menus": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/Menu"
+					}
+				}
+			}
+		},
+		"Actualites": {
+			"properties": {
+				"id": {
+					"type": "string"
+				},
+				"titre": {
+					"type": "string"
+				},
+				"date": {
+					"type": "string"
+				},
+				"category": {
+					"type": "string"
+				},
+				"image": {
+					"type": "string"
+				},
+				"content": {
+					"type": "string"
+				},
+				"type": {
+					"type": "string"
+				}
+			}
+		},
+		"Residence": {
+			"properties": {
+				"id": {
+					"type": "string"
+				},
+				"name": {
+					"type": "string"
+				},
+				"short_desc": {
+					"type": "string"
+				},
+				"position": {
+					"$ref": "#/definitions/position"
+				},
+				"infos": {
+					"type": "string"
+				},
+				"services": {
+					"type": "string"
+				},
+				"contact": {
+					"type": "string"
+				},
+				"mail": {
+					"type": "string"
+				},
+				"phone": {
+					"type": "string"
+				},
+				"websiteUrl": {
+					"type": "string"
+				},
+				"appointmentUrl": {
+					"type": "string"
+				},
+				"virtualVisitUrl": {
+					"type": "string"
+				},
+				"bookingUrl": {
+					"type": "string"
+				},
+				"troubleshootingUrl": {
+					"type": "string"
+				}
+			}
+		},
+		"Menu": {
+			"properties": {
+				"date": {
+					"type": "string"
+				},
+				"plats": {
+					"type": "object",
+					"properties": {
+						"type de plat": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+
+					"example": {
+						"grillades": ["grillade1", "grillade2"],
+						"salades": ["salade1", "salade2"],
+						"entrees": ["entrees1", "entrees2"]
+					}
+				}
+			}
+		},
+		"position": {
+			"type": "object",
+			"properties": {
+				"lat": {
+					"type": "number"
+				},
+				"lon": {
+					"type": "number"
+				},
+				"zone": {
+					"type": "string"
+				},
+				"localisation": {
+					"type": "string"
+				}
+			}
+		}
+	}
+}
