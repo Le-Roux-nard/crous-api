@@ -328,7 +328,7 @@
 							"type": "array",
 							"nullable": true,
 							"items": {
-								"$ref": "#/definitions/Actualite"
+								"$ref": "#/definitions/Actualites"
 							}
 						},
 						"residences": {
