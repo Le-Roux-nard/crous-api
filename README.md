@@ -15,34 +15,35 @@
 </p>
 
 > Cette API a été conçue lors d'un semestre d'études au CEGEP de Matane suite à un échange avec l'IUT de Laval, France.
-<br/>
-Elle permet la récupération de toutes les données fournies par l'État français et liées aux CROUS. 
-<br/>
-Les données suivantes sont ainsi accessibles : 
-<br/>
-* Les Restaurants et leurs menus (si communiqué)
-* Les Résidences
-* Les Actualités
+> <br/>
+> Elle permet la récupération de toutes les données fournies par l'État français et liées aux CROUS.
+> <br/>
+> Les données suivantes sont ainsi accessibles :
+> <br/>
 
-Les structures de données sont disponibles dans la documention fournie, soit via l'url [prout](), soit via l'endpoint `/docs`
+-   Les Restaurants et leurs menus (si communiqué)
+-   Les Résidences
+-   Les Actualités
 
-⚠ *Seuls les restaurants et les menus sont disponibles dans un format JSON correct, les données étant récupérées au format HTML il est compliqué de déterminer un pattern pour les deux derniers types de données*
+Les structures de données sont disponibles dans la documention fournie, soit [via l'url suivante](https://le-roux-nard.github.io/crous-api/), soit via l'endpoint `/docs` une fois l'API fonctionnelle
 
-## Install
+⚠ _Seuls les restaurants et les menus sont disponibles dans un format JSON correct, les données étant récupérées au format HTML il est compliqué de déterminer un pattern pour les deux derniers types de données_
+
+## Installation
 
 ```sh
 npm install
 ```
 
-## Usage
+## Utilisation
 
-#### Standalone
+#### En tant que serveur web
 
 ```sh
 npm run start
 ```
 
-#### Module
+#### En tant que module
 
 ```ts
 import express from "express";
@@ -54,19 +55,18 @@ app.use("myPath", crousRouter);
 app.listen(process.env.PORT ?? 8080);
 ```
 
-### **Special Thing :**
-The API will take around 2 minutes to initialize and any request on it before end of initialization will result in `425 - Api Starting, please wait...`
+### ⚠ **Attention :**
 
-## Author
+L'API prend environ 2 minutes à s'initialiser, toute requête réalisée avant la fin de l'initialisation de l'api aboutira à la réponse suivante <br/>
+`425 - Api Starting, please wait...`
+
+## Auteur
 
 👤 **Le_Roux-Nard**
 
 <!-- -   Website: ... -->
+
 -   Github: [@le-roux-nard](https://github.com/le-roux-nard)
-
-## Show your support
-
-You can give a 🌟
 
 ---
 
