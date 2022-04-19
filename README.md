@@ -55,10 +55,13 @@ app.use("myPath", crousRouter);
 app.listen(process.env.PORT ?? 8080);
 ```
 
-### ⚠ **Attention :**
+<br/>
 
-L'API prend environ 2 minutes à s'initialiser, toute requête réalisée avant la fin de l'initialisation de l'api aboutira à la réponse suivante <br/>
-`425 - Api Starting, please wait...`
+~~L'API prend environ 2 minutes à s'initialiser, toute requête réalisée avant la fin de l'initialisation de l'api aboutira à la réponse suivante~~
+<br/>
+~~`425 - Api Starting, please wait...`~~
+<br/>
+L'utilisation de [Promise.all()](https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Global_Objects/Promise/all) a permis de diminuer le temps de chargement à environ **3 secondes**
 
 ## Auteur
 

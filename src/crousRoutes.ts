@@ -113,7 +113,7 @@ function setupRouter(workspace: Namespace): Router {
 			if (socketData) {
 				// supprime le restaurant de la liste des restaurants suivis
 				if (socketData.followingRestaurants && socketData.followingRestaurants.length > 0) {
-					socketData.followingRestaurants = socketData.followingRestaurants?.filter((id) => id != idRestaurant);
+					socketData.followingRestaurants = socketData.followingRestaurants?.filter((id : string) => id != idRestaurant);
 				}
 			}
 		});

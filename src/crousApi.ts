@@ -80,10 +80,12 @@ String.prototype.generateDatasetLink = function (this: string) {
 	return `https://www.data.gouv.fr/fr/datasets/r/${this}`;
 };
 
+const promises: Promise<any>[] = [];
+
 class CrousAPI {
 	static isLoaded: boolean = false;
 	private static lienPourListeCrous: String[] = [
-		"https://www.data.gouv.fr/api/2/datasets/5548d35cc751df0767a7b26c/resources/?page=1&type=main&page_size=-1",	//Actualites
+		"https://www.data.gouv.fr/api/2/datasets/5548d35cc751df0767a7b26c/resources/?page=1&type=main&page_size=-1", //Actualites
 		"https://www.data.gouv.fr/api/2/datasets/5548d994c751df32e0a7b26c/resources/?page=1&type=main&page_size=-1", //Résidences
 		"https://www.data.gouv.fr/api/2/datasets/55f28fe088ee386774a46ec2/resources/?page=1&type=main&page_size=-1", //Restaurants
 		"https://www.data.gouv.fr/api/2/datasets/55f27f8988ee383ebda46ec1/resources/?page=1&type=main&page_size=-1", //menus
@@ -94,194 +96,209 @@ class CrousAPI {
 	private listeCrous: Map<String, Crous> = new Map<String, Crous>();
 
 	private async initialisationAPI() {
-		for await (const lien of CrousAPI.lienPourListeCrous) {
-			let { data: reponse } = await axios({
-				method: "get",
-				url: lien,
-				transformResponse: [(data: string) => JSON.parse(data)?.data],
-			});
+		for (const lien of CrousAPI.lienPourListeCrous) {
+			let promise = new Promise(async (resolve) => {
+				let { data: reponse } = await axios({
+					method: "get",
+					url: lien,
+					transformResponse: [(data: string) => JSON.parse(data)?.data],
+				});
 
-			//#region Récupération des données
-			for await (const ressource of reponse) {
-				let result = /^(?<type>\S+).+(?:CROUS\s)(?:(?:de|d')\s?)?(?<nomCrous>.+)/gim.exec(ressource.title);
-				if (result && result.groups) {
-					let nom: String = result.groups.nomCrous;
-					let tempType: string = result.groups.type == "Lieux" ? "Restaurants" : result.groups.type;
-					let type: String = tempType.endsWith("s") || tempType.endsWith("x") ? tempType : tempType + "s";
-					let nomCrous = { affichage: nom, baseDeDonnees: nom.formatBaseDeDonnees() };
+				//#region Récupération des données
+				for (const ressource of reponse) {
+					let result = /^(?<type>\S+).+(?:CROUS\s)(?:(?:de|d')\s?)?(?<nomCrous>.+)/gim.exec(ressource.title);
+					if (result && result.groups) {
+						let nom: String = result.groups.nomCrous;
+						let tempType: string = result.groups.type == "Lieux" ? "Restaurants" : result.groups.type;
+						let type: String = tempType.endsWith("s") || tempType.endsWith("x") ? tempType : tempType + "s";
+						let nomCrous = { affichage: nom, baseDeDonnees: nom.formatBaseDeDonnees() };
 
-					if (!this.listeCrous.get(nomCrous.baseDeDonnees)) {
-						this.listeCrous.set(
-							nomCrous.baseDeDonnees,
-							new Crous(
-								nomCrous.affichage,
-								new Map().set(type.formatBaseDeDonnees(), new DonnesDisponiblesPourCrous(type, ressource.id)),
-								new DonneesCrous(undefined, undefined, undefined)
-							)
-						);
+						if (!this.listeCrous.get(nomCrous.baseDeDonnees)) {
+							this.listeCrous.set(
+								nomCrous.baseDeDonnees,
+								new Crous(
+									nomCrous.affichage,
+									new Map().set(type.formatBaseDeDonnees(), new DonnesDisponiblesPourCrous(type, ressource.id)),
+									new DonneesCrous(undefined, undefined, undefined)
+								)
+							);
+						}
+						this.listeCrous
+							.get(nomCrous.baseDeDonnees)
+							?.donneesDisponibles.set(type.formatBaseDeDonnees(), new DonnesDisponiblesPourCrous(type, ressource.id));
 					}
-					this.listeCrous
-						.get(nomCrous.baseDeDonnees)
-						?.donneesDisponibles.set(type.formatBaseDeDonnees(), new DonnesDisponiblesPourCrous(type, ressource.id));
 				}
-			}
+				resolve(undefined);
+			});
+			promises.push(promise);
 			//#endregion
+		}
+		await Promise.all(promises);
+		while (promises.length > 0) {
+			promises.pop();
 		}
 
 		//#region Récupération des datasets
 		console.time("récupération datasets");
-		for await (const crousData of this.listeCrous.values()) {
-			for await (const [type, { id }] of crousData.donneesDisponibles.entries()) {
-				switch (type) {
-					case "actualites": {
-						await this.fetchDataset(id.generateDatasetLink(), (data: xml2jonResult) => {
-							crousData.donnees.set(
-								type,
-								data.root.article.map(
-									(articleDb: ActualitesDataBase) =>
-										new Actualites(
-											articleDb._attributes.id,
-											articleDb._attributes.titre,
-											articleDb._attributes.date,
-											articleDb._attributes.category,
-											articleDb._attributes.image,
-											articleDb._cdata,
-											articleDb._attributes.type
-										)
-								)
-							);
-						});
-						break;
-					}
-					case "residences": {
-						await this.fetchDataset(id.generateDatasetLink(), (data: xml2jonResult) => {
-							crousData.donnees.set(
-								type,
-								data.root.residence.map(
-									(residenceDb: ResidenceDataBase) =>
-										new Residence(
-											residenceDb._attributes.id,
-											residenceDb._attributes.title,
-											residenceDb._attributes.short_desc,
-
-											// residenceDb._attributes.lat,
-											// residenceDb._attributes.lon,
-											// residenceDb._attributes.zone,
-											// residenceDb.address?._text ?? "",
-											new Position(
-												residenceDb._attributes.lat,
-												residenceDb._attributes.lon,
-												residenceDb._attributes.zone,
-												residenceDb.address?._text
-											),
-
-											residenceDb.infos?._text ?? "",
-											residenceDb.services?._text ?? "",
-											residenceDb.contact?._text ?? "",
-											residenceDb.mail?._text ?? "",
-											residenceDb.phone?._text ?? "",
-											residenceDb.internetUrl?._text ?? "",
-											residenceDb.appointmentUrl?._text ?? "",
-											residenceDb.virtualVisitUrl?._text ?? "",
-											residenceDb.bookingUrl?._text ?? "",
-											residenceDb.troubleshootingUrl?._text ?? ""
-										)
-								)
-							);
-						});
-						break;
-					}
-					case "restaurants": {
-						await this.fetchDataset(id.generateDatasetLink(), (data: xml2jonResult) => {
-							let listeRestaurants: Restaurant[] = [];
-							for (const restaurant of data.root.resto) {
-								let tempResto: Restaurant = new Restaurant(crousData.nomCrous);
-								tempResto.nom = restaurant._attributes.title;
-								tempResto.short_desc = restaurant._attributes.short_desc;
-								tempResto.opening = restaurant._attributes.opening?.split(",")?.map((e: string) => new Opening(e)) ?? [];
-								tempResto.type = restaurant._attributes.type;
-								tempResto.id = restaurant._attributes.id;
-
-								for (let arr of restaurant.infos._cdata.replace(/<img.*?>/gi, "").split("<h2>")) {
-									arr = arr.replace("</p>", "");
-									let tmp = arr.split("</h2><p>");
-									if (tmp[1]) {
-										restaurant[tmp[0]] = tmp[1];
-
-										while (restaurant[tmp[0]].includes("&#")) {
-											restaurant[tmp[0]] = he.decode(restaurant[tmp[0]]);
-										}
-										restaurant[tmp[0]] = restaurant[tmp[0]]
-											.replace(/<br\/>/gi, "\n")
-											.split("\n\n")
-											.join("\n");
-									}
-								}
-								tempResto.position = new Position(
-									restaurant._attributes.lat,
-									restaurant._attributes.lon,
-									restaurant._attributes.zone,
-									restaurant["Localisation"]
+		for (const crousData of this.listeCrous.values()) {
+			for (const [type, { id }] of crousData.donneesDisponibles.entries()) {
+				let promise = new Promise(async (resolve) => {
+					switch (type) {
+						case "actualites": {
+							await this.fetchDataset(id.generateDatasetLink(), (data: xml2jonResult) => {
+								crousData.donnees.set(
+									type,
+									data.root.article.map(
+										(articleDb: ActualitesDataBase) =>
+											new Actualites(
+												articleDb._attributes.id,
+												articleDb._attributes.titre,
+												articleDb._attributes.date,
+												articleDb._attributes.category,
+												articleDb._attributes.image,
+												articleDb._cdata,
+												articleDb._attributes.type
+											)
+									)
 								);
-								tempResto.horaires = restaurant["Horaires"];
-								tempResto.pratique = restaurant["Pratique"];
-								tempResto.paiements = restaurant["Paiements possibles"]?.split(/\n(?:\ )*/gi)?.map((e: string) => e.trim()) ?? [];
-								tempResto.paiements[tempResto.paiements.length - 1] == "" && tempResto.paiements.pop();
+							});
+							break;
+						}
+						case "residences": {
+							await this.fetchDataset(id.generateDatasetLink(), (data: xml2jonResult) => {
+								crousData.donnees.set(
+									type,
+									data.root.residence.map(
+										(residenceDb: ResidenceDataBase) =>
+											new Residence(
+												residenceDb._attributes.id,
+												residenceDb._attributes.title,
+												residenceDb._attributes.short_desc,
 
-								tempResto.moyen_acces = restaurant["Moyen d'accès"];
-								listeRestaurants.push(tempResto);
-							}
-							crousData.donnees.restaurants = listeRestaurants;
-						});
-						break;
-					}
-					case "menus": {
-						await this.fetchDataset(id.generateDatasetLink(), async (data: xml2jonResult) => {
-							for (const resto of <RestaurantMenuDataBase[]>data.root.resto) {
-								if (resto?.menu?.length && resto?.menu?.length > 0) {
-									let restaurantMenus: Menu[] = [];
+												// residenceDb._attributes.lat,
+												// residenceDb._attributes.lon,
+												// residenceDb._attributes.zone,
+												// residenceDb.address?._text ?? "",
+												new Position(
+													residenceDb._attributes.lat,
+													residenceDb._attributes.lon,
+													residenceDb._attributes.zone,
+													residenceDb.address?._text
+												),
 
-									for (const menu of resto?.menu ?? []) {
-										let date = menu._attributes.date;
-										let content = menu._cdata;
+												residenceDb.infos?._text ?? "",
+												residenceDb.services?._text ?? "",
+												residenceDb.contact?._text ?? "",
+												residenceDb.mail?._text ?? "",
+												residenceDb.phone?._text ?? "",
+												residenceDb.internetUrl?._text ?? "",
+												residenceDb.appointmentUrl?._text ?? "",
+												residenceDb.virtualVisitUrl?._text ?? "",
+												residenceDb.bookingUrl?._text ?? "",
+												residenceDb.troubleshootingUrl?._text ?? ""
+											)
+									)
+								);
+							});
+							break;
+						}
+						case "restaurants": {
+							await this.fetchDataset(id.generateDatasetLink(), (data: xml2jonResult) => {
+								let listeRestaurants: Restaurant[] = [];
+								for (const restaurant of data.root.resto) {
+									let tempResto: Restaurant = new Restaurant(crousData.nomCrous);
+									tempResto.nom = restaurant._attributes.title;
+									tempResto.short_desc = restaurant._attributes.short_desc;
+									tempResto.opening = restaurant._attributes.opening?.split(",")?.map((e: string) => new Opening(e)) ?? [];
+									tempResto.type = restaurant._attributes.type;
+									tempResto.id = restaurant._attributes.id;
 
-										for (const serviceData of content.match(/<h2>.*?<\/h2><h4>.*?<\/h4>.*?(?=<h4>|<h2>|$)(?=<h2>|$)/g) || []) {
-											let tmpMenu: { [key: string]: any } = {};
-											let [, service] = serviceData?.match(/(?:<h2>)(.*?)(?:<\/h2>)/) ?? [];
-											tmpMenu = {};
-											tmpMenu.date = date;
-											tmpMenu.restaurantId = resto._attributes.id;
-											tmpMenu.horaire = service;
-											tmpMenu.plats = new Map<String, string[]>();
+									for (let arr of restaurant.infos._cdata.replace(/<img.*?>/gi, "").split("<h2>")) {
+										arr = arr.replace("</p>", "");
+										let tmp = arr.split("</h2><p>");
+										if (tmp[1]) {
+											restaurant[tmp[0]] = tmp[1];
 
-											let differentFoodTypesArray =
-												serviceData?.match(/<h4>(?<typePlat>.*?)<\/h4>(?<data>.*?)(?=<h4>|$)/g) ?? [];
-
-											for (const foodList of differentFoodTypesArray) {
-												let [, foodCategory] = foodList?.match(/(?:<h4>)(.*?)(?:<\/h4>)/) ?? [];
-												let food = foodList
-													.replace(/<\/?ul.*?>|<h4>.*?<\/h4>/g, "")
-													.split(/<\/li>|<li>/g)
-													.filter(String);
-												tmpMenu.plats.set(foodCategory, food);
+											while (restaurant[tmp[0]].includes("&#")) {
+												restaurant[tmp[0]] = he.decode(restaurant[tmp[0]]);
 											}
+											restaurant[tmp[0]] = restaurant[tmp[0]]
+												.replace(/<br\/>/gi, "\n")
+												.split("\n\n")
+												.join("\n");
+										}
+									}
+									tempResto.position = new Position(
+										restaurant._attributes.lat,
+										restaurant._attributes.lon,
+										restaurant._attributes.zone,
+										restaurant["Localisation"]
+									);
+									tempResto.horaires = restaurant["Horaires"];
+									tempResto.pratique = restaurant["Pratique"];
+									tempResto.paiements = restaurant["Paiements possibles"]?.split(/\n(?:\ )*/gi)?.map((e: string) => e.trim()) ?? [];
+									tempResto.paiements[tempResto.paiements.length - 1] == "" && tempResto.paiements.pop();
 
-											let parentRestaurant = await (<Restaurant>(
-												crousData.donnees.restaurants?.find((r) => r.id === resto._attributes.id)
-											));
-											if (parentRestaurant) {
-												parentRestaurant.addMenu(new Menu(tmpMenu.date, tmpMenu.horaire, tmpMenu.plats));
+									tempResto.moyen_acces = restaurant["Moyen d'accès"];
+									listeRestaurants.push(tempResto);
+								}
+								crousData.donnees.restaurants = listeRestaurants;
+							});
+							break;
+						}
+						case "menus": {
+							await this.fetchDataset(id.generateDatasetLink(), async (data: xml2jonResult) => {
+								for (const resto of <RestaurantMenuDataBase[]>data.root.resto) {
+									if (resto?.menu?.length && resto?.menu?.length > 0) {
+										let restaurantMenus: Menu[] = [];
+
+										for (const menu of resto?.menu ?? []) {
+											let date = menu._attributes.date;
+											let content = menu._cdata;
+
+											for (const serviceData of content.match(/<h2>.*?<\/h2><h4>.*?<\/h4>.*?(?=<h4>|<h2>|$)(?=<h2>|$)/g) ||
+												[]) {
+												let tmpMenu: { [key: string]: any } = {};
+												let [, service] = serviceData?.match(/(?:<h2>)(.*?)(?:<\/h2>)/) ?? [];
+												tmpMenu = {};
+												tmpMenu.date = date;
+												tmpMenu.restaurantId = resto._attributes.id;
+												tmpMenu.horaire = service;
+												tmpMenu.plats = new Map<String, string[]>();
+
+												let differentFoodTypesArray =
+													serviceData?.match(/<h4>(?<typePlat>.*?)<\/h4>(?<data>.*?)(?=<h4>|$)/g) ?? [];
+
+												for (const foodList of differentFoodTypesArray) {
+													let [, foodCategory] = foodList?.match(/(?:<h4>)(.*?)(?:<\/h4>)/) ?? [];
+													let food = foodList
+														.replace(/<\/?ul.*?>|<h4>.*?<\/h4>/g, "")
+														.split(/<\/li>|<li>/g)
+														.filter(String);
+													tmpMenu.plats.set(foodCategory, food);
+												}
+
+												let parentRestaurant = await (<Restaurant>(
+													crousData.donnees.restaurants?.find((r) => r.id === resto._attributes.id)
+												));
+												if (parentRestaurant) {
+													parentRestaurant.addMenu(new Menu(tmpMenu.date, tmpMenu.horaire, tmpMenu.plats));
+												}
 											}
 										}
 									}
 								}
-							}
-						});
-						break;
+							});
+							break;
+						}
 					}
-				}
+					resolve(id);
+				});
+
+				promises.push(promise);
 			}
 		}
+		await Promise.all(promises);
 		console.timeEnd("récupération datasets");
 		CrousAPI.isLoaded = true;
 		//#endregion
