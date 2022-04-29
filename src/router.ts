@@ -17,7 +17,7 @@ router.use(function (req: Request, res: Response, next: NextFunction) {
 // 	res.sendFile(dirName.join("\\") + "/static/index.html");
 // });
 
-function getCrousRouter(workspace : Namespace) : Router {
+function getCrousRouter({ workspace }: { workspace: Namespace }): Router {
 	router.use("/", setupRouter(workspace));
 	return router;
 }
