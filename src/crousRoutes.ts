@@ -5,6 +5,8 @@ import { CronJob } from "cron";
 import * as Swagger from "swagger-ui-express";
 import { Namespace, Server, Socket } from "socket.io";
 
+import { resolve } from "path";
+
 import CrousAPI, { replacer } from "./crousApi";
 import { DataAvailabilityChecker } from "./customMiddlewares";
 import { ClasseDonneeCrous, Restaurant } from "./crousClasses";
@@ -21,7 +23,7 @@ const swaggerOptions = {
 	customSiteTitle: "Documentation",
 	customfavIcon: "/favicon.ico",
 };
-const swaggerDoc = require("../swagger.json");
+const swaggerDoc = require(resolve(__dirname, "../swagger.json"));
 
 router.use("/docs", Swagger.serve, Swagger.setup(swaggerDoc, swaggerOptions));
 
@@ -113,7 +115,7 @@ function setupRouter(workspace: Namespace): Router {
 			if (socketData) {
 				// supprime le restaurant de la liste des restaurants suivis
 				if (socketData.followingRestaurants && socketData.followingRestaurants.length > 0) {
-					socketData.followingRestaurants = socketData.followingRestaurants?.filter((id : string) => id != idRestaurant);
+					socketData.followingRestaurants = socketData.followingRestaurants?.filter((id: string) => id != idRestaurant);
 				}
 			}
 		});
