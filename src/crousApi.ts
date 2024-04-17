@@ -1,6 +1,4 @@
 import { CrousData, isCrousName } from "crous-api-types";
-import axios from "axios";
-import { crousWebServiceAxios } from "./utils/AxiosCustom.js";
 import { xml2json } from "xml-js";
 import { Dataset } from "./utils/Dataset.js";
 import { CrousBuilder } from "./classes/Crous.js";
@@ -30,19 +28,17 @@ class CrousAPI {
 		this.setupApi();
 	}
 
-	private setupApi() {
-		this.holidaysManager.updateCache().then(() => {
-			this.holidaysManager.loadCustomVacances();
-			this.publicHolydaysManager.updateCache().then(() => {
-				for (const crous of this.listeCrous.values()) {
-					crous.actualites.removeAll();
-					crous.residences.removeAll();
-					crous.restaurants.removeAll();
-				}
-				global.gc && global.gc(); //use garbage collector
-				this.initialisationAPI();
-			});
-		});
+	async setupApi() {
+		await this.holidaysManager.updateCache();
+		this.holidaysManager.loadCustomVacances();
+		await this.publicHolydaysManager.updateCache();
+
+		for (const crous of this.listeCrous.values()) {
+			crous.actualites.removeAll();
+			crous.residences.removeAll();
+			crous.restaurants.removeAll();
+		}
+		this.initialisationAPI();
 	}
 
 	public static getInstance(): CrousAPI {
@@ -53,13 +49,9 @@ class CrousAPI {
 		let promises: Promise<void>[] = [];
 		const timerName = `${Date.now()} - Récupération datasets`;
 		console.time(timerName);
-		for (const lien of CrousAPI.liensDatasets) {
+		for (const url of CrousAPI.liensDatasets) {
 			let promise = new Promise<void>(async (resolve) => {
-				let { data } = await axios({
-					method: "get",
-					url: lien,
-					transformResponse: [(data: string) => JSON.parse(data)?.data],
-				});
+				let data = await fetch(url).then((r) => r.json().then((jsonBody) => jsonBody.data));
 
 				//#region Récupération des données
 				for await (const dataset of data as Dataset[]) {
@@ -74,14 +66,11 @@ class CrousAPI {
 
 						const crous = this.listeCrous.get(idCrous);
 
-						let { data } = await axios({
-							method: "get",
-							url: dataset.url,
-						});
+						let datasetData = await fetch(dataset.url).then((r) => r.text());
 
 						let parsedResult;
 						try {
-							parsedResult = JSON.parse(xml2json(data, { compact: true }));
+							parsedResult = JSON.parse(xml2json(datasetData, { compact: true }));
 						} catch (err) {
 							console.error(
 								(err as Error).message == "Attribute without value"
@@ -111,7 +100,7 @@ class CrousAPI {
 
 	public async fetchRestaurants() {
 		const minifiedJsonEndpoint = (crousName: string) => `/externe/crous-${crousName}.min.json`;
-		const data: string = await crousWebServiceAxios.get("").then((res) => res.data);
+		const data: string = await fetch("http://webservices-v2.crous-mobile.fr/feed").then((r) => r.text());
 		const crousShortNames: string[] = [];
 		for (const match of data.matchAll(/(?<=href=").+?(?=\/">)/g)) {
 			const possibleCrousName = match[0];
@@ -120,11 +109,9 @@ class CrousAPI {
 		for await (const crousShortName of crousShortNames) {
 			const crous = this.listeCrous.get(crousShortName);
 			const minifiedJsonUrl = `${crousShortName}/${minifiedJsonEndpoint(crousShortName)}`.replace(/(?<!http:)\/{2,}/g, "/");
-			const res = await crousWebServiceAxios.get(minifiedJsonUrl);
-			if (!res || !res?.data) continue;
-			typeof res.data == "string" && (res.data = JSON.parse(res.data.replace(/	/g, "")));
-			if (!res.data) continue;
-			const { restaurants } = res.data;
+			const { restaurants } = await fetch(`http://webservices-v2.crous-mobile.fr/feed/${minifiedJsonUrl}`)
+				.then((r) => r.json())
+				.then((r) => JSON.parse(r));
 			crous?.restaurants?.addSome(restaurants);
 		}
 	}
