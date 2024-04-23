@@ -24,8 +24,11 @@ class CrousAPI {
 	public publicHolydaysManager: publicHolydaysManager = new publicHolydaysManager();
 
 	constructor() {
-		CrousAPI.cache ||= this;
-		this.setupApi();
+		if (!CrousAPI.cache) {
+			CrousAPI.cache = this;
+			this.setupApi();
+		}
+		return CrousAPI.cache;
 	}
 
 	async setupApi() {
