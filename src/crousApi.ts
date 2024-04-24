@@ -10,6 +10,8 @@ import { CronJob } from "cron";
 
 import { CustomResourceManager } from "./ResourceManagers/AllManagers.js";
 
+import { writeFileSync} from "fs"
+
 class CrousAPI {
 	static isLoaded: boolean = false;
 	private static liensDatasets: string[] = [
@@ -113,8 +115,11 @@ class CrousAPI {
 			const crous = this.listeCrous.get(crousShortName);
 			const minifiedJsonUrl = `${crousShortName}/${minifiedJsonEndpoint(crousShortName)}`.replace(/(?<!http:)\/{2,}/g, "/");
 			const { restaurants } = await fetch(`http://webservices-v2.crous-mobile.fr/feed/${minifiedJsonUrl}`)
-				.then((r) => r.json())
-				.then((r) => JSON.parse(r));
+				.then((r) => r.text())
+				.then((r) => r.replace(/\s+/g, " "))
+				.then((r) => {
+					return JSON.parse(r);
+				});
 			crous?.restaurants?.addSome(restaurants);
 		}
 	}
