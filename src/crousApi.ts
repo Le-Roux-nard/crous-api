@@ -10,7 +10,8 @@ import { CronJob } from "cron";
 
 import { CustomResourceManager } from "./ResourceManagers/AllManagers.js";
 
-import { writeFileSync} from "fs"
+import { writeFileSync } from "fs";
+import { RestaurantJson } from "./classes/RestaurantJSON.js";
 
 class CrousAPI {
 	static isLoaded: boolean = false;
@@ -114,12 +115,21 @@ class CrousAPI {
 		for await (const crousShortName of crousShortNames) {
 			const crous = this.listeCrous.get(crousShortName);
 			const minifiedJsonUrl = `${crousShortName}/${minifiedJsonEndpoint(crousShortName)}`.replace(/(?<!http:)\/{2,}/g, "/");
-			const { restaurants } = await fetch(`http://webservices-v2.crous-mobile.fr/feed/${minifiedJsonUrl}`)
-				.then((r) => r.text())
-				.then((r) => r.replace(/\s+/g, " "))
-				.then((r) => {
-					return JSON.parse(r);
-				});
+
+			const requestResult = await fetch(`http://webservices-v2.crous-mobile.fr/feed/${minifiedJsonUrl}`);
+			let restaurants: RestaurantJson[];
+			try {
+				let jsonResult = await requestResult.clone().json();
+				restaurants = JSON.parse(jsonResult).restaurants;
+			} catch {
+				// in case of non-valid JSON
+				let textResult = await requestResult
+					.clone()
+					.text()
+					.then((r) => r.replace(/\s+/g, " "));
+				let jsonResult = JSON.parse(textResult);
+				restaurants = jsonResult.restaurants;
+			}
 			crous?.restaurants?.addSome(restaurants);
 		}
 	}
