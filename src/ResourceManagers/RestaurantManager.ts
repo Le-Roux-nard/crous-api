@@ -32,6 +32,11 @@ export default class RestaurantManager extends ResourceManager<Restaurant> {
 			.map((menuList) => menuList.meal.map((repas) => new MenuBuilder(newRestaurant.id, menuList.date, repas)))
 			.flat();
 
-		this.list = Array.from(new Set(this.list.concat([newRestaurant])));
+		let existingRestaurantIndex = this.list.findIndex((r) => r.id === item.id.toString());
+		if (!existingRestaurantIndex) {
+			this.list.concat([newRestaurant]);
+		} else {
+			this.list[existingRestaurantIndex] = newRestaurant;
+		}
 	}
 }
