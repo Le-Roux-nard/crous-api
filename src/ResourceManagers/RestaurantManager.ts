@@ -33,8 +33,8 @@ export default class RestaurantManager extends ResourceManager<Restaurant> {
 			.flat();
 
 		let existingRestaurantIndex = this.list.findIndex((r) => r.id === item.id.toString());
-		if (!existingRestaurantIndex) {
-			this.list.concat([newRestaurant]);
+		if (existingRestaurantIndex < 0) {
+			this.list.push(newRestaurant);
 		} else {
 			this.list[existingRestaurantIndex] = newRestaurant;
 		}
