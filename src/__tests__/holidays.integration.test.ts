@@ -1,6 +1,7 @@
-import PublicHolidaysManager from "../utils/publicHolydayManager";
-import HolidaysManager from "../utils/HolidaysManager";
-import server from "../__mocks__/server";
+/// <reference types="jest" />
+import PublicHolidaysManager from "../utils/publicHolydayManager.js";
+import HolidaysManager from "../utils/HolidaysManager.js";
+import server from "../__mocks__/server.js";
 
 beforeAll(() => {
 	jest.useFakeTimers().setSystemTime(new Date("2023-03-01"));

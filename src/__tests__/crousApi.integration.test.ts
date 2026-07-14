@@ -1,5 +1,6 @@
+/// <reference types="jest" />
 import CrousAPI from "../crousApi.js";
-import server from "../__mocks__/server";
+import server from "../__mocks__/server.js";
 import { Restaurant } from "crous-api-types";
 
 let crousApi: CrousAPI;
