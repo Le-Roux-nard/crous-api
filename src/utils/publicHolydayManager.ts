@@ -1,4 +1,3 @@
-import { publicHolidaysAxios } from "./AxiosCustom.js";
 import { ActualEvent } from "./ActualEvent.js";
 import { PublicHoliday } from "./publicHoliday.js";
 
@@ -16,19 +15,13 @@ export default class PublicHolydaysManager {
 	}
 
 	public async updateCache() {
-		await publicHolidaysAxios
-			.get(`${new Date().getFullYear()}.json`)
-			.then(({ data }) => {
-				for (const [date, reason] of Object.entries(data)) {
-					//only add if not already in cache
-					if (this.cache.findIndex((p) => p.date === new Date(date)) === -1) {
-						this.cache.push(new PublicHoliday(new Date(date), reason as string));
-					}
-				}
-			})
-			.catch((error) => {
-				console.error(error);
-			});
+		const data = await fetch(`https://calendrier.api.gouv.fr/jours-feries/metropole/${new Date().getFullYear()}.json`).then(r => r.json());
+		for (const [date, reason] of Object.entries(data)) {
+			//only add if not already in cache
+			if (this.cache.findIndex((p) => p.date === new Date(date)) === -1) {
+				this.cache.push(new PublicHoliday(new Date(date), reason as string));
+			}
+		}
 	}
 
 	public getPublicHolydays(): (PublicHoliday & ActualEvent)[] {

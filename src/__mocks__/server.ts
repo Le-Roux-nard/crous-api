@@ -1,6 +1,7 @@
-import { rest } from "msw";
 import { setupServer } from "msw/node";
 import { readFileSync } from "fs";
+
+import { http, HttpResponse } from "msw";
 
 const mockFolderPath = "./mockData";
 
@@ -11,25 +12,29 @@ const datasetLogements = JSON.parse(readFileSync(`${mockFolderPath}/datasetLogem
 const crousWebServiceFeed = readFileSync(`${mockFolderPath}/crousWebServiceFeed.htm`).toString();
 
 const handlers = [
-	rest.get("https://data.education.gouv.fr/api/records/1.0/search/", (req, res, ctx) => res(ctx.json(holidaysJSON))),
-	rest.get(/https?:\/\/calendrier\.api\.gouv\.fr\/jours-feries\/metropole\/\d{4}/, (req, res, ctx) => res(ctx.json(publicHolidaysJSON))),
-	rest.get("https://www.data.gouv.fr/api/2/datasets/5548d35cc751df0767a7b26c/resources/", (req, res, ctx) => res(ctx.json(datasetActus))),
-	rest.get("https://www.data.gouv.fr/api/2/datasets/5548d994c751df32e0a7b26c/resources/", (req, res, ctx) => res(ctx.json(datasetLogements))),
-	rest.get(/https?:\/\/webservices-v2\.crous-mobile\.fr(?::8080)?\/feed\/?/, async (req, res, ctx) => {
-		const crousName = req.url.toString().match(/feed\/(?<crousName>.+?)\//)?.groups?.crousName;
+	http.get("https://data.education.gouv.fr/api/records/1.0/search/", () => HttpResponse.json(holidaysJSON)),
+	http.get(/https?:\/\/calendrier\.api\.gouv\.fr\/jours-feries\/metropole\/\d{4}/, () => HttpResponse.json(publicHolidaysJSON)),
+	http.get("https://www.data.gouv.fr/api/2/datasets/5548d35cc751df0767a7b26c/resources/", () => HttpResponse.json(datasetActus)),
+	http.get("https://www.data.gouv.fr/api/2/datasets/5548d994c751df32e0a7b26c/resources/", () => HttpResponse.json(datasetLogements)),
+	http.get(/https?:\/\/webservices-v2\.crous-mobile\.fr(?::8080)?\/feed\/?/, async ({ request: { url: reqUrl } }) => {
+		const crousName = reqUrl.toString().match(/feed\/(?<crousName>.+?)\//)?.groups?.crousName;
 		if (!crousName) {
-			return res(ctx.body(crousWebServiceFeed));
+			return HttpResponse.text(crousWebServiceFeed);
 		} else {
-			const fileName = req.url.toString().split("/").pop();
+			const fileName = reqUrl.toString().split("/").pop();
 			let filePath, fileData;
 			if (fileName?.endsWith(".xml")) {
 				filePath = `${mockFolderPath}/${crousName}/${fileName}`;
 				fileData = await readFileSync(filePath);
-				return res(ctx.xml(fileData.toString()));
+				return HttpResponse.xml(fileData.toString());
 			} else if (fileName?.endsWith(".json")) {
 				filePath = `${mockFolderPath}/${crousName}/restaurant.json`;
 				fileData = await readFileSync(filePath);
-				return res(ctx.json(fileData.toString()));
+				return HttpResponse.json(fileData.toString(), {
+					headers: {
+						"Content-Type": "application/json",
+					},
+				});
 			} else {
 				throw new Error("File extension not supported");
 			}

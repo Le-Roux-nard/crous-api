@@ -5,7 +5,7 @@ import { CronJob } from "cron";
 import * as Swagger from "swagger-ui-express";
 import { Namespace, Socket } from "socket.io";
 
-import * as swaggerDoc from "./swagger.json" assert { type: "json" };
+import swaggerDoc from "./swagger.json" with { type: "json" };
 
 import CrousAPI from "./crousApi.js";
 import { CrousData, Crous, CustomSocketData, CustomHolidays, ResourceManager, Restaurant } from "crous-api-types";
